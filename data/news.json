@@ -1,0 +1,121 @@
+{
+  "news": [
+    {
+      "id": "n1",
+      "title": "Faille critique RCE dans un pare-feu d'entreprise activement exploitée",
+      "summary": "Une vulnérabilité d'exécution de code à distance (CVSS 10.0) touche plusieurs milliers d'appliances. Un correctif d'urgence est disponible.",
+      "source": "CERT-FR",
+      "url": "https://www.cert.ssi.gouv.fr/",
+      "date": "2026-11-17",
+      "tags": ["RCE", "0-day", "Pare-feu"]
+    },
+    {
+      "id": "n2",
+      "title": "Campagne de phishing par QR codes ciblant les sessions Microsoft 365",
+      "summary": "Les attaquants utilisent des QR codes (quishing) pour contourner les filtres email et dérober des jetons de session OAuth.",
+      "source": "The Hacker News",
+      "url": "https://thehackernews.com/",
+      "date": "2026-11-14",
+      "tags": ["Phishing", "QR Code", "Microsoft 365"]
+    },
+    {
+      "id": "n3",
+      "title": "Un ransomware exploite une chaîne d'escalade locale sur Linux",
+      "summary": "Un nouveau ransomware cible les serveurs Linux en combinant une escalade de privilèges locale et un chiffrement asymétrique rapide.",
+      "source": "BleepingComputer",
+      "url": "https://www.bleepingcomputer.com/",
+      "date": "2026-11-10",
+      "tags": ["Ransomware", "Linux", "Privilege Escalation"]
+    },
+    {
+      "id": "n4",
+      "title": "Divulgation de 2,3 milliards d'enregistrements via un bucket mal configuré",
+      "summary": "Un bucket de stockage objet ouvert contenait des données clients et des journaux internes sans authentification.",
+      "source": "SecurityWeek",
+      "url": "https://www.securityweek.com/",
+      "date": "2026-11-06",
+      "tags": ["Data Leak", "Cloud", "S3"]
+    },
+    {
+      "id": "n5",
+      "title": "Nouvelle souche de botnet IoT ciblant les routeurs grand public",
+      "summary": "Le malware exploite des identifiants par défaut pour rejoindre un réseau de zombies utilisé dans des campagnes DDoS.",
+      "source": "Krebs on Security",
+      "url": "https://krebsonsecurity.com/",
+      "date": "2026-11-02",
+      "tags": ["Botnet", "IoT", "DDoS"]
+    }
+  ],
+  "tools": [
+    {
+      "name": "Nmap",
+      "description": "Scanner de ports et cartographie réseau de référence.",
+      "url": "https://github.com/nmap/nmap",
+      "stars": "10.2k",
+      "category": "Recon"
+    },
+    {
+      "name": "Metasploit Framework",
+      "description": "Framework d'exploitation et de test d'intrusion.",
+      "url": "https://github.com/rapid7/metasploit-framework",
+      "stars": "36k",
+      "category": "Exploitation"
+    },
+    {
+      "name": "Wireshark",
+      "description": "Analyseur de paquets réseau open-source.",
+      "url": "https://github.com/wireshark/wireshark",
+      "stars": "7.8k",
+      "category": "Analyse"
+    },
+    {
+      "name": "Nuclei",
+      "description": "Scanner de vulnérabilités basé sur des templates YAML.",
+      "url": "https://github.com/projectdiscovery/nuclei",
+      "stars": "23k",
+      "category": "Scan"
+    },
+    {
+      "name": "theHarvester",
+      "description": "Collecte d'emails, sous-domaines et hôtes depuis des sources publiques.",
+      "url": "https://github.com/laramies/theHarvester",
+      "stars": "11k",
+      "category": "Recon"
+    },
+    {
+      "name": "XSStrike",
+      "description": "Scanner XSS avancé avec moteur d'exploitation.",
+      "url": "https://github.com/s0md3v/XSStrike",
+      "stars": "14k",
+      "category": "Web"
+    },
+    {
+      "name": "John the Ripper",
+      "description": "Casseur de mots de passe open-source.",
+      "url": "https://github.com/openwall/john",
+      "stars": "11k",
+      "category": "Cracking"
+    },
+    {
+      "name": "Shodan CLI",
+      "description": "Client en ligne de commande pour le moteur de recherche d'objets connectés.",
+      "url": "https://github.com/shodanhq/shodan-python",
+      "stars": "2k",
+      "category": "Recon"
+    },
+    {
+      "name": "Burp Suite",
+      "description": "Plateforme de test de sécurité web (Community Edition).",
+      "url": "https://portswigger.net/burp/communitydownload",
+      "stars": "N/A",
+      "category": "Web"
+    },
+    {
+      "name": "SQLMap",
+      "description": "Outil d'automatisation pour la détection et l'exploitation d'injections SQL.",
+      "url": "https://github.com/sqlmapproject/sqlmap",
+      "stars": "33k",
+      "category": "Web"
+    }
+  ]
+}

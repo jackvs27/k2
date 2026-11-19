@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Salon de discussion anonyme — pseudo uniquement, aucun compte requis." />
+  <title>Messages — root@k9</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <div class="hud hud--left">
+    <span class="dot"></span>
+    <span class="label">IP</span>
+    <span class="value" id="hud-ip">···.···.···.···</span>
+  </div>
+  <div class="hud hud--right">
+    <span class="dot"></span>
+    <span class="label">Heure</span>
+    <span class="value" id="hud-clock">00:00:00</span>
+  </div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <div class="brand"><span class="logo"></span><span>root@k9</span></div>
+      <div class="nav__links">
+        <a href="/">Accueil</a>
+        <a href="/exploits.html">Exploits</a>
+        <a href="/news.html">Actus &amp; Outils</a>
+        <a href="/messages.html" class="active">Messages</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <section class="section">
+      <div class="section__head">
+        <h2>Salon anonyme</h2>
+        <span class="link mono">pseudo requis · aucun compte</span>
+      </div>
+
+      <div class="board">
+        <form class="board__form" id="msg-form" autocomplete="off">
+          <input
+            type="text"
+            class="pseudo"
+            id="msg-pseudo"
+            name="pseudo"
+            placeholder="Ton pseudo"
+            minlength="2"
+            maxlength="24"
+            required
+          />
+          <input
+            type="text"
+            id="msg-content"
+            name="content"
+            placeholder="Ton message…"
+            minlength="3"
+            maxlength="500"
+            required
+          />
+          <button type="submit" class="btn btn--primary">&gt;_ Envoyer</button>
+        </form>
+
+        <ul class="board__list" id="msg-list" aria-live="polite">
+          <!-- messages injectés par JS -->
+        </ul>
+        <div class="board__error hidden" id="msg-error"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="disclaimer">
+      ⚠️ Restez courtois. Les messages sont publics et anonymes. Ne partagez
+      aucune donnée personnelle ou illégale. Les messages sont modérés et
+      supprimables à tout moment.
+    </p>
+    <p>root@k9 — <span class="footer-year"></span> · Propulsé par Node.js &amp; Express</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      const { esc, fmtDate, fmtTime } = window.CYBER;
+
+      const form = document.getElementById("msg-form");
+      const pseudoEl = document.getElementById("msg-pseudo");
+      const contentEl = document.getElementById("msg-content");
+      const listEl = document.getElementById("msg-list");
+      const errorEl = document.getElementById("msg-error");
+
+      // Mémorise le pseudo localement pour le confort.
+      try {
+        const saved = localStorage.getItem("cybersite_pseudo");
+        if (saved) pseudoEl.value = saved;
+      } catch (_) {}
+
+      function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.classList.remove("hidden");
+        clearTimeout(showError._t);
+        showError._t = setTimeout(() => errorEl.classList.add("hidden"), 5000);
+      }
+
+      function avatarInitial(pseudo) {
+        return (pseudo || "?").charAt(0).toUpperCase();
+      }
+
+      function messageNode(m) {
+        const li = document.createElement("li");
+
+        const avatar = document.createElement("div");
+        avatar.className = "board__avatar";
+        avatar.textContent = avatarInitial(m.pseudo);
+
+        const content = document.createElement("div");
+        content.className = "board__content";
+
+        const head = document.createElement("div");
+        head.className = "board__head";
+
+        const pseudo = document.createElement("span");
+        pseudo.className = "pseudo";
+        pseudo.textContent = m.pseudo;
+
+        const time = document.createElement("span");
+        time.className = "time";
+        time.textContent = `${fmtDate(m.createdAt)} · ${fmtTime(m.createdAt)}`;
+        time.title = new Date(m.createdAt).toLocaleString("fr-FR");
+
+        head.appendChild(pseudo);
+        head.appendChild(time);
+
+        const text = document.createElement("p");
+        text.className = "board__text";
+        text.textContent = m.content;
+
+        content.appendChild(head);
+        content.appendChild(text);
+
+        li.appendChild(avatar);
+        li.appendChild(content);
+        return li;
+      }
+
+      let known = new Set();
+      let loading = false;
+
+      function renderMessages(messages, reset) {
+        const arr = Array.isArray(messages) ? messages : [];
+        if (reset) {
+          listEl.innerHTML = "";
+          known = new Set();
+        }
+        const fragment = document.createDocumentFragment();
+        for (const m of arr) {
+          if (m && m.id && !known.has(m.id)) {
+            known.add(m.id);
+            fragment.appendChild(messageNode(m));
+          }
+        }
+        listEl.appendChild(fragment);
+        // Fait défiler vers le bas uniquement si on est déjà proche du bas.
+        const nearBottom =
+          listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight < 120;
+        if (nearBottom || reset) listEl.scrollTop = listEl.scrollHeight;
+      }
+
+      function fetchMessages(reset) {
+        if (loading) return;
+        loading = true;
+        fetch("/api/messages", { cache: "no-store" })
+          .then((r) => {
+            if (!r.ok) throw new Error("http " + r.status);
+            return r.json();
+          })
+          .then((data) => renderMessages(data, reset))
+          .catch(() => {
+            if (reset) showError("Impossible de charger les messages.");
+          })
+          .finally(() => {
+            loading = false;
+          });
+      }
+
+      form.addEventListener("submit", (ev) => {
+        ev.preventDefault();
+        const pseudo = pseudoEl.value.trim();
+        const content = contentEl.value.trim();
+
+        if (pseudo.length < 2) return showError("Pseudo trop court (2 caractères minimum).");
+        if (content.length < 3) return showError("Message trop court (3 caractères minimum).");
+        if (content.length > 500) return showError("Message trop long (500 caractères maximum).");
+
+        const btn = form.querySelector("button[type=submit]");
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = "...";
+
+        fetch("/api/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pseudo, content }),
+        })
+          .then((r) =>
+            r.json().then((data) => ({ ok: r.ok, status: r.status, data }))
+          )
+          .then(({ ok, status, data }) => {
+            if (!ok) {
+              throw new Error(data && data.error ? data.error : "Erreur " + status);
+            }
+            // Ajoute immédiatement le message renvoyé par le serveur.
+            renderMessages([data], false);
+            listEl.scrollTop = listEl.scrollHeight;
+            contentEl.value = "";
+            try {
+              localStorage.setItem("cybersite_pseudo", pseudo);
+            } catch (_) {}
+          })
+          .catch((err) => showError(err.message || "Échec de l'envoi."))
+          .finally(() => {
+            btn.disabled = false;
+            btn.textContent = original;
+          });
+      });
+
+      // Chargement initial + rafraîchissement toutes les 5s.
+      fetchMessages(true);
+      setInterval(() => fetchMessages(false), 5000);
+
+      document.querySelectorAll(".footer-year").forEach((el) => {
+        el.textContent = new Date().getFullYear();
+      });
+    })();
+  </script>
+</body>
+</html>

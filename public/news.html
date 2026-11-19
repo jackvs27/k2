@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Veille cybersécurité et sélection d'outils GitHub." />
+  <title>Actus &amp; Outils — root@k9</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <div class="hud hud--left">
+    <span class="dot"></span>
+    <span class="label">IP</span>
+    <span class="value" id="hud-ip">···.···.···.···</span>
+  </div>
+  <div class="hud hud--right">
+    <span class="dot"></span>
+    <span class="label">Heure</span>
+    <span class="value" id="hud-clock">00:00:00</span>
+  </div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <div class="brand"><span class="logo"></span><span>root@k9</span></div>
+      <div class="nav__links">
+        <a href="/">Accueil</a>
+        <a href="/exploits.html">Exploits</a>
+        <a href="/news.html" class="active">Actus &amp; Outils</a>
+        <a href="/messages.html">Messages</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ACTUALITÉS -->
+    <section class="section">
+      <div class="section__head">
+        <h2>Veille cybersécurité</h2>
+        <span class="link mono">cyberattaques récentes</span>
+      </div>
+      <div class="grid" id="news-grid">
+        <!-- injecté par JS -->
+      </div>
+    </section>
+
+    <!-- OUTILS -->
+    <section class="section">
+      <div class="section__head">
+        <h2>Outils GitHub</h2>
+        <span class="link mono">sélection de la communauté</span>
+      </div>
+      <div class="grid" id="tools-grid">
+        <!-- injecté par JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p class="disclaimer">
+      ⚠️ Les outils listés sont destinés à la recherche et aux tests autorisés.
+      Utilisez-les uniquement sur des systèmes que vous possédez ou pour lesquels
+      vous avez une autorisation écrite.
+    </p>
+    <p>root@k9 — <span class="footer-year"></span> · Propulsé par Node.js &amp; Express</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      const { esc, fmtDate } = window.CYBER;
+
+      function newsCard(n) {
+        const tags = (n.tags || [])
+          .map((t) => `<span class="tag">${esc(t)}</span>`)
+          .join("");
+        return `
+          <article class="card news-item">
+            <div class="card__meta">
+              <span class="source">${esc(n.source || "Source")}</span>
+              <span class="date">${esc(fmtDate(n.date))}</span>
+            </div>
+            <h3 class="card__title">
+              <a href="${esc(n.url || "#")}" target="_blank" rel="noopener">${esc(n.title)}</a>
+            </h3>
+            <p class="card__summary">${esc(n.summary || "")}</p>
+            <div class="tags">${tags}</div>
+          </article>`;
+      }
+
+      function toolCard(t) {
+        const initial = (t.name || "?").charAt(0).toUpperCase();
+        const stars = t.stars && t.stars !== "N/A"
+          ? `<span class="stars">★ ${esc(t.stars)}</span>`
+          : "";
+        return `
+          <a class="tool-card" href="${esc(t.url || "#")}" target="_blank" rel="noopener">
+            <div class="icon">${esc(initial)}</div>
+            <div class="body">
+              <div class="name">${esc(t.name)} ${stars}</div>
+              <div class="desc">${esc(t.description || "")}</div>
+            </div>
+            <span class="cat">${esc(t.category || "Tool")}</span>
+          </a>`;
+      }
+
+      fetch("/api/news", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          const newsBox = document.getElementById("news-grid");
+          const toolsBox = document.getElementById("tools-grid");
+
+          const news = (data.news || []).slice().sort((a, b) =>
+            (b.date || "").localeCompare(a.date || "")
+          );
+          const tools = data.tools || [];
+
+          if (newsBox) {
+            newsBox.innerHTML = news.length
+              ? news.map(newsCard).join("")
+              : '<p class="muted">Aucune actualité disponible.</p>';
+          }
+          if (toolsBox) {
+            toolsBox.innerHTML = tools.length
+              ? tools.map(toolCard).join("")
+              : '<p class="muted">Aucun outil listé pour le moment.</p>';
+          }
+        })
+        .catch(() => {
+          const newsBox = document.getElementById("news-grid");
+          const toolsBox = document.getElementById("tools-grid");
+          if (newsBox) newsBox.innerHTML = '<p class="muted">Impossible de charger les actualités.</p>';
+          if (toolsBox) toolsBox.innerHTML = '<p class="muted">Impossible de charger les outils.</p>';
+        });
+
+      document.querySelectorAll(".footer-year").forEach((el) => {
+        el.textContent = new Date().getFullYear();
+      });
+    })();
+  </script>
+</body>
+</html>

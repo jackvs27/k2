@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Portfolio cybersécurité : exploits, veille, outils et communauté anonyme." />
+  <title>root@k9 — Portfolio Cybersécurité</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- HUD : IP (gauche) + horloge (droite) -->
+  <div class="hud hud--left">
+    <span class="dot"></span>
+    <span class="label">IP</span>
+    <span class="value" id="hud-ip">···.···.···.···</span>
+  </div>
+  <div class="hud hud--right">
+    <span class="dot"></span>
+    <span class="label">Heure</span>
+    <span class="value" id="hud-clock">00:00:00</span>
+  </div>
+
+  <!-- Barre de navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <div class="brand">
+        <span class="logo"></span>
+        <span>root@k9</span>
+      </div>
+      <div class="nav__links">
+        <a href="/" class="active">Accueil</a>
+        <a href="/exploits.html">Exploits</a>
+        <a href="/news.html">Actus & Outils</a>
+        <a href="/messages.html">Messages</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="eyebrow">Portfolio · Recherche · Communauté</div>
+      <h1>Exploits, veille &amp;<br/>outils cybersécurité</h1>
+      <p>
+        Bienvenue sur mon espace. J'y publie mes découvertes en sécurité offensive,
+        une veille sur les cyberattaques récentes, une sélection d'outils GitHub
+        et un salon de discussion anonyme ouvert à tous.
+      </p>
+      <div class="hero__actions">
+        <a href="/exploits.html" class="btn btn--primary">&gt;_ Voir les exploits</a>
+        <a href="/news.html" class="btn btn--ghost">Veille &amp; outils</a>
+      </div>
+    </section>
+
+    <!-- DERNIERS EXPLOITS -->
+    <section class="section">
+      <div class="section__head">
+        <h2>Derniers exploits</h2>
+        <a href="/exploits.html" class="link">Tout voir →</a>
+      </div>
+      <div class="grid" id="exploits-preview">
+        <!-- injecté par JS -->
+      </div>
+    </section>
+
+    <!-- DERNIÈRES ACTUS -->
+    <section class="section">
+      <div class="section__head">
+        <h2>Veille cybersécurité</h2>
+        <a href="/news.html" class="link">Tout voir →</a>
+      </div>
+      <div class="grid" id="news-preview">
+        <!-- injecté par JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p class="disclaimer">
+      ⚠️ Contenu à but éducatif et de recherche. Toute utilisation illégale de ces
+      techniques est interdite. Testez uniquement sur des systèmes que vous possédez
+      ou pour lesquels vous avez une autorisation écrite.
+    </p>
+    <p>root@k9 — <span id="footer-year"></span> · Propulsé par Node.js &amp; Express</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      const { esc, fmtDate } = window.CYBER;
+
+      function difficultyClass(d) {
+        const v = (d || "").toLowerCase();
+        if (v.includes("début") || v.includes("debut")) return "badge--debutant";
+        if (v.includes("interm") || v.includes("moyen")) return "badge--intermediaire";
+        return "badge--avance";
+      }
+
+      function exploitCard(e) {
+        const tags = (e.tags || [])
+          .map((t) => `<span class="tag">${esc(t)}</span>`)
+          .join("");
+        return `
+          <article class="card">
+            <div class="card__meta">
+              <span class="badge ${difficultyClass(e.difficulty)}">${esc(e.difficulty || "?")}</span>
+              <span class="badge badge--type">${esc(e.type || "Web")}</span>
+              <span class="date">${esc(fmtDate(e.date))}</span>
+            </div>
+            <h3 class="card__title">
+              <a href="/exploit.html?id=${encodeURIComponent(e.id)}">${esc(e.title)}</a>
+            </h3>
+            <p class="card__summary">${esc(e.summary || "")}</p>
+            <div class="tags">${tags}</div>
+          </article>`;
+      }
+
+      fetch("/api/exploits", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((list) => {
+          const box = document.getElementById("exploits-preview");
+          if (!box) return;
+          const top = (list || []).slice().reverse().slice(0, 3);
+          box.innerHTML = top.length
+            ? top.map(exploitCard).join("")
+            : '<p class="muted">Aucun exploit publié pour le moment.</p>';
+        })
+        .catch(() => {
+          const box = document.getElementById("exploits-preview");
+          if (box) box.innerHTML = '<p class="muted">Impossible de charger les exploits.</p>';
+        });
+
+      fetch("/api/news", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          const box = document.getElementById("news-preview");
+          if (!box) return;
+          const news = (data.news || []).slice(0, 3);
+          box.innerHTML = news.length
+            ? news
+                .map(
+                  (n) => `
+            <article class="card news-item">
+              <div class="card__meta">
+                <span class="source">${esc(n.source || "Source")}</span>
+                <span class="date">${esc(fmtDate(n.date))}</span>
+              </div>
+              <h3 class="card__title"><a href="${esc(n.url || "#")}" target="_blank" rel="noopener">${esc(n.title)}</a></h3>
+              <p class="card__summary">${esc(n.summary || "")}</p>
+            </article>`
+                )
+                .join("")
+            : '<p class="muted">Aucune actualité disponible.</p>';
+        })
+        .catch(() => {
+          const box = document.getElementById("news-preview");
+          if (box) box.innerHTML = '<p class="muted">Impossible de charger les actualités.</p>';
+        });
+
+      const fy = document.getElementById("footer-year");
+      if (fy) fy.textContent = new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>
