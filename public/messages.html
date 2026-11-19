@@ -6,6 +6,22 @@
   <meta name="description" content="Salon de discussion anonyme — pseudo uniquement, aucun compte requis." />
   <title>Messages — root@k9</title>
   <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    .badge--official {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      background: rgba(0, 255, 170, 0.15);
+      color: var(--neon);
+      border: 1px solid rgba(0, 255, 170, 0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
 
@@ -126,12 +142,22 @@
         pseudo.className = "pseudo";
         pseudo.textContent = m.pseudo;
 
+        head.appendChild(pseudo);
+
+        // --- AJOUT DU BADGE OFFICIEL ---
+        if (m.official && m.pseudo === 'root@k9') {
+          const badge = document.createElement("span");
+          badge.className = "badge--official";
+          badge.textContent = "OFFICIEL";
+          head.appendChild(badge);
+        }
+        // -------------------------------
+
         const time = document.createElement("span");
         time.className = "time";
         time.textContent = `${fmtDate(m.createdAt)} · ${fmtTime(m.createdAt)}`;
         time.title = new Date(m.createdAt).toLocaleString("fr-FR");
 
-        head.appendChild(pseudo);
         head.appendChild(time);
 
         const text = document.createElement("p");
