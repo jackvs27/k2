@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="description" content="Administration privée du salon — accès protégé." />
+  <title>Admin — root@k9</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <style>
+    /* --- Spécifique à l'administration ---------------------------------- */
+    .admin-gate {
+      max-width: 460px;
+      margin: 48px auto 0;
+    }
+    .admin-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+    .admin-card h3 {
+      margin: 0 0 6px;
+      font-family: var(--mono);
+      font-size: 1.15rem;
+      color: var(--neon);
+    }
+    .admin-card p.hint {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-family: var(--mono);
+    }
+    .admin-input {
+      width: 100%;
+      background: #0a0f1a;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .admin-input:focus { border-color: var(--neon); }
+    .admin-gate .btn { width: 100%; justify-content: center; margin-top: 14px; }
+
+    .admin-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .admin-toolbar .spacer { flex: 1; }
+    .admin-stat {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .admin-stat strong { color: var(--neon-2); }
+
+    .admin-compose {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .admin-compose .admin-input { flex: 1 1 260px; }
+    .admin-compose .btn { flex: 0 0 auto; }
+    .admin-compose__hint {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: -10px 0 22px;
+    }
+    .admin-compose__hint .pseudo { color: var(--neon-2); font-weight: 700; }
+
+    .admin-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .admin-item {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .admin-item .board__avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+    }
+    .admin-item__content { flex: 1; min-width: 0; }
+    .admin-item__head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .admin-item__head .pseudo {
+      font-family: var(--mono);
+      font-weight: 700;
+      color: var(--neon-2);
+    }
+    .admin-item__head .time {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    .badge-official {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #04110b;
+      background: linear-gradient(135deg, var(--neon), var(--neon-2));
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .admin-item__text {
+      margin: 0;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .btn--danger {
+      border-color: rgba(255, 77, 109, 0.45);
+      color: var(--danger);
+      background: rgba(255, 77, 109, 0.08);
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      flex: 0 0 auto;
+    }
+    .btn--danger:hover {
+      background: rgba(255, 77, 109, 0.18);
+      border-color: var(--danger);
+      box-shadow: 0 8px 30px rgba(255, 77, 109, 0.25);
+    }
+    .admin-status {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      min-height: 1.4em;
+      margin: 0 0 14px;
+      color: var(--muted);
+    }
+    .admin-status.is-error { color: var(--danger); }
+    .admin-status.is-ok { color: var(--neon); }
+    .admin-empty {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 28px 0;
+    }
+    @media (max-width: 640px) {
+      .admin-gate { margin-top: 28px; }
+      .admin-compose .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hud hud--left">
+    <span class="dot"></span>
+    <span class="label">IP</span>
+    <span class="value" id="hud-ip">···.···.···.···</span>
+  </div>
+  <div class="hud hud--right">
+    <span class="dot"></span>
+    <span class="label">Heure</span>
+    <span class="value" id="hud-clock">00:00:00</span>
+  </div>
+
+  <nav class="nav">
+    <div class="nav__inner">
+      <div class="brand"><span class="logo"></span><span>root@k9</span></div>
+      <div class="nav__links">
+        <a href="/">Accueil</a>
+        <a href="/exploits.html">Exploits</a>
+        <a href="/news.html">Actus &amp; Outils</a>
+        <a href="/messages.html">Messages</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Écran de connexion -->
+    <section id="admin-gate" class="admin-gate">
+      <div class="admin-card">
+        <h3>// Accès administration</h3>
+        <p class="hint">Zone privée — entrez le mot de passe administrateur.</p>
+        <form id="login-form" autocomplete="off">
+          <input
+            type="password"
+            class="admin-input"
+            id="login-password"
+            name="password"
+            placeholder="Mot de passe admin"
+            autocomplete="current-password"
+            required
+          />
+          <button type="submit" class="btn btn--primary" id="login-btn">&gt;_ Se connecter</button>
+        </form>
+        <div class="board__error hidden" id="login-error" style="padding: 12px 0 0"></div>
+      </div>
+    </section>
+
+    <!-- Panneau d'administration -->
+    <section id="admin-panel" class="hidden">
+      <div class="section__head">
+        <h2>Administration du salon</h2>
+        <span class="link mono">zone privée · non référencée</span>
+      </div>
+
+      <div class="admin-toolbar">
+        <span class="admin-stat"><strong id="admin-count">0</strong> message(s) stocké(s)</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" id="refresh-btn">↻ Actualiser</button>
+        <button type="button" class="btn btn--ghost" id="logout-btn">Déconnexion</button>
+      </div>
+
+      <div class="board">
+        <form class="admin-compose" id="compose-form" autocomplete="off">
+          <input
+            type="text"
+            class="admin-input"
+            id="compose-content"
+            name="content"
+            placeholder="Message officiel à publier…"
+            minlength="3"
+            maxlength="500"
+            required
+          />
+          <button type="submit" class="btn btn--primary" id="compose-btn">&gt;_ Publier</button>
+        </form>
+        <p class="admin-compose__hint">
+          Publié en tant que <span class="pseudo">root@k9</span> · visible immédiatement dans le salon public.
+        </p>
+
+        <p class="admin-status" id="admin-status" role="status" aria-live="polite"></p>
+
+        <ul class="admin-list" id="admin-list" aria-live="polite"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p class="disclaimer">
+      ⚠️ Accès strictement réservé à l'administrateur. Toute action est journalisée côté serveur.
+    </p>
+    <p>root@k9 — <span class="footer-year"></span> · Propulsé par Node.js &amp; Express</p>
+  </footer>
+
+  <script src="/js/common.js"></script>
+  <script>
+    (function () {
+      "use strict";
+      const { fmtDate, fmtTime } = window.CYBER;
+
+      const STORAGE_KEY = "cybersite_admin_pw";
+
+      const gateEl = document.getElementById("admin-gate");
+      const panelEl = document.getElementById("admin-panel");
+      const loginForm = document.getElementById("login-form");
+      const loginPasswordEl = document.getElementById("login-password");
+      const loginBtn = document.getElementById("login-btn");
+      const loginErrorEl = document.getElementById("login-error");
+      const composeForm = document.getElementById("compose-form");
+      const composeContentEl = document.getElementById("compose-content");
+      const composeBtn = document.getElementById("compose-btn");
+      const listEl = document.getElementById("admin-list");
+      const countEl = document.getElementById("admin-count");
+      const statusEl = document.getElementById("admin-status");
+      const refreshBtn = document.getElementById("refresh-btn");
+      const logoutBtn = document.getElementById("logout-btn");
+
+      let adminPassword = "";
+      let pollTimer = null;
+      let busy = false;
+
+      try {
+        adminPassword = sessionStorage.getItem(STORAGE_KEY) || "";
+      } catch (_) {}
+
+      function showLoginError(msg) {
+        loginErrorEl.textContent = msg;
+        loginErrorEl.classList.remove("hidden");
+      }
+
+      function clearLoginError() {
+        loginErrorEl.textContent = "";
+        loginErrorEl.classList.add("hidden");
+      }
+
+      function setStatus(msg, kind) {
+        statusEl.textContent = msg || "";
+        statusEl.classList.remove("is-error", "is-ok");
+        if (kind === "error") statusEl.classList.add("is-error");
+        if (kind === "ok") statusEl.classList.add("is-ok");
+        clearTimeout(setStatus._t);
+        if (msg) {
+          setStatus._t = setTimeout(() => {
+            statusEl.textContent = "";
+            statusEl.classList.remove("is-error", "is-ok");
+          }, 4000);
+        }
+      }
+
+      // Appel API authentifié : mot de passe dans un en-tête dédié.
+      async function api(pathname, options) {
+        const opts = options || {};
+        const headers = Object.assign({}, opts.headers || {}, {
+          "X-Admin-Password": adminPassword,
+        });
+        if (opts.body) headers["Content-Type"] = "application/json";
+
+        const res = await fetch(pathname, Object.assign({}, opts, {
+          headers: headers,
+          cache: "no-store",
+        }));
+
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (_) {}
+
+        return { ok: res.ok, status: res.status, data: data };
+      }
+
+      function isRootPseudo(pseudo) {
+        return String(pseudo || "")
+          .normalize("NFKC")
+          .replace(/\s+/g, "")
+          .toLowerCase() === "root@k9";
+      }
+
+      function messageNode(m) {
+        const li = document.createElement("li");
+        li.className = "admin-item";
+        li.dataset.id = m.id;
+
+        const avatar = document.createElement("div");
+        avatar.className = "board__avatar";
+        avatar.textContent = (m.pseudo || "?").charAt(0).toUpperCase();
+
+        const content = document.createElement("div");
+        content.className = "admin-item__content";
+
+        const head = document.createElement("div");
+        head.className = "admin-item__head";
+
+        const pseudo = document.createElement("span");
+        pseudo.className = "pseudo";
+        pseudo.textContent = m.pseudo;
+
+        head.appendChild(pseudo);
+
+        if (m.official || isRootPseudo(m.pseudo)) {
+          const badge = document.createElement("span");
+          badge.className = "badge-official";
+          badge.textContent = "officiel";
+          head.appendChild(badge);
+        }
+
+        const time = document.createElement("span");
+        time.className = "time";
+        time.textContent = `${fmtDate(m.createdAt)} · ${fmtTime(m.createdAt)}`;
+        time.title = new Date(m.createdAt).toLocaleString("fr-FR");
+        head.appendChild(time);
+
+        const text = document.createElement("p");
+        text.className = "admin-item__text";
+        text.textContent = m.content;
+
+        content.appendChild(head);
+        content.appendChild(text);
+
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn btn--danger";
+        del.dataset.action = "delete";
+        del.dataset.id = m.id;
+        del.title = "Supprimer ce message";
+        del.setAttribute("aria-label", "Supprimer le message de " + m.pseudo);
+        del.textContent = "Supprimer";
+
+        li.appendChild(avatar);
+        li.appendChild(content);
+        li.appendChild(del);
+        return li;
+      }
+
+      function renderList(messages) {
+        const arr = Array.isArray(messages) ? messages : [];
+        listEl.innerHTML = "";
+
+        countEl.textContent = String(arr.length);
+
+        if (arr.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "admin-empty";
+          empty.textContent = "Aucun message pour le moment.";
+          listEl.appendChild(empty);
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        // Plus récents en premier.
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const m = arr[i];
+          if (m && m.id) fragment.appendChild(messageNode(m));
+        }
+        listEl.appendChild(fragment);
+      }
+
+      function handleUnauthorized() {
+        logout();
+        showLoginError("Session expirée ou mot de passe invalide. Reconnectez-vous.");
+      }
+
+      async function loadMessages() {
+        if (busy) return;
+        busy = true;
+        try {
+          const { ok, status, data } = await api("/api/admin/messages");
+          if (status === 401 || status === 403) return handleUnauthorized();
+          if (status === 429) return setStatus("Trop de tentatives. Réessayez plus tard.", "error");
+          if (!ok) throw new Error("Erreur " + status);
+          renderList(data);
+        } catch (err) {
+          setStatus(err.message || "Impossible de charger les messages.", "error");
+        } finally {
+          busy = false;
+        }
+      }
+
+      async function deleteMessage(id, btn) {
+        if (!id || busy) return;
+        busy = true;
+        btn.disabled = true;
+        const original = btn.textContent;
+        btn.textContent = "...";
+
+        try {
+          const { ok, status } = await api("/api/messages/" + encodeURIComponent(id), {
+            method: "DELETE",
+          });
+
+          if (status === 401 || status === 403) return handleUnauthorized();
+          if (status === 429) throw new Error("Trop de requêtes. Réessayez plus tard.");
+          if (!ok) throw new Error("Suppression impossible (erreur " + status + ").");
+
+          const item = listEl.querySelector('[data-id="' + CSS.escape(id) + '"]');
+          if (item) item.remove();
+          if (!listEl.querySelector(".admin-item")) renderList([]);
+
+          countEl.textContent = String(
+            Math.max(0, Number(countEl.textContent || "0") - 1)
+          );
+          setStatus("Message supprimé.", "ok");
+        } catch (err) {
+          setStatus(err.message || "Échec de la suppression.", "error");
+          btn.disabled = false;
+          btn.textContent = original;
+        } finally {
+          busy = false;
+        }
+      }
+
+      function showPanel() {
+        gateEl.classList.add("hidden");
+        panelEl.classList.remove("hidden");
+        clearLoginError();
+        loadMessages();
+        clearInterval(pollTimer);
+        pollTimer = setInterval(() => {
+          if (!document.hidden && !busy) loadMessages();
+        }, 5000);
+      }
+
+      function logout() {
+        adminPassword = "";
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch (_) {}
+        clearInterval(pollTimer);
+        pollTimer = null;
+        panelEl.classList.add("hidden");
+        gateEl.classList.remove("hidden");
+        loginPasswordEl.value = "";
+        listEl.innerHTML = "";
+        countEl.textContent = "0";
+        loginPasswordEl.focus();
+      }
+
+      /* ------------------------------------------------------------- Login -- */
+      loginForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const pw = loginPasswordEl.value;
+        if (!pw) return showLoginError("Veuillez saisir le mot de passe.");
+
+        loginBtn.disabled = true;
+        const original = loginBtn.textContent;
+        loginBtn.textContent = "...";
+        clearLoginError();
+        adminPassword = pw;
+
+        try {
+          const { ok, status } = await api("/api/admin/messages");
+          if (status === 401 || status === 403) {
+            adminPassword = "";
+            throw new Error("Mot de passe incorrect.");
+          }
+          if (status === 429) {
+            adminPassword = "";
+            throw new Error("Trop de tentatives. Réessayez dans quelques minutes.");
+          }
+          if (!ok) throw new Error("Connexion impossible (erreur " + status + ").");
+
+          try {
+            sessionStorage.setItem(STORAGE_KEY, pw);
+          } catch (_) {}
+          loginPasswordEl.value = "";
+          showPanel();
+        } catch (err) {
+          adminPassword = "";
+          showLoginError(err.message || "Échec de la connexion.");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = original;
+        }
+      });
+
+      /* ----------------------------------------------------------- Compose -- */
+      composeForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        if (busy) return;
+        const content = composeContentEl.value.trim();
+
+        if (content.length < 3) return setStatus("Message trop court (3 caractères minimum).", "error");
+        if (content.length > 500) return setStatus("Message trop long (500 caractères maximum).", "error");
+
+        busy = true;
+        composeBtn.disabled = true;
+        const original = composeBtn.textContent;
+        composeBtn.textContent = "...";
+
+        try {
+          const { ok, status, data } = await api("/api/admin/messages", {
+            method: "POST",
+            body: JSON.stringify({ content: content }),
+          });
+
+          if (status === 401 || status === 403) return handleUnauthorized();
+          if (!ok) throw new Error((data && data.error) || "Publication impossible (erreur " + status + ").");
+
+          composeContentEl.value = "";
+          setStatus("Message officiel publié en tant que root@k9.", "ok");
+          // Place le nouveau message en tête de liste sans attendre le poll.
+          listEl.insertBefore(messageNode(data), listEl.firstChild);
+          const empty = listEl.querySelector(".admin-empty");
+          if (empty) empty.remove();
+          countEl.textContent = String(Number(countEl.textContent || "0") + 1);
+        } catch (err) {
+          setStatus(err.message || "Échec de la publication.", "error");
+        } finally {
+          busy = false;
+          composeBtn.disabled = false;
+          composeBtn.textContent = original;
+        }
+      });
+
+      /* ------------------------------------------------------- Délégation --- */
+      listEl.addEventListener("click", (ev) => {
+        const btn = ev.target.closest('button[data-action="delete"]');
+        if (!btn) return;
+        deleteMessage(btn.dataset.id, btn);
+      });
+
+      refreshBtn.addEventListener("click", () => {
+        loadMessages();
+        setStatus("Liste actualisée.", "ok");
+      });
+
+      logoutBtn.addEventListener("click", logout);
+
+      document.querySelectorAll(".footer-year").forEach((el) => {
+        el.textContent = new Date().getFullYear();
+      });
+
+      // Session déjà ouverte dans cet onglet : on tente directement.
+      if (adminPassword) {
+        showPanel();
+      } else {
+        loginPasswordEl.focus();
+      }
+    })();
+  </script>
+</body>
+</html>
